@@ -47,12 +47,18 @@ BLEDevice central = BLE.central();
 
 
     //wait until write from client
-    //while(!flagChar.written()){delay(100);}
+    while(!flagChar.written() && central.connected()){
+      delay(100);
+      Serial.println("Unchanged");
+      }
 
-    // for(int i=0; i<20; i++){
-    //   writeVal(sampleChar, i);
-    //   delay(500);
-    // }
+      if(central.connected()){
+      Serial.print("Value Changed");
+        for(int i=0; i<20; i++){
+        writeVal(sampleChar, i);
+        delay(500);
+      }
+      }
 
     //keep the connection alive
     while (central.connected()) {
