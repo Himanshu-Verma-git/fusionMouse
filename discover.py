@@ -29,7 +29,12 @@ async def connect(device: bleak.backends.device.BLEDevice):
         SERVICE_UUID = "0000180c-0000-1000-8000-00805f9b34fb"
         CHAR_UUID = "00002a56-0000-1000-8000-00805f9b34fb"
         
-        print(get_val(CHAR_UUID, client))
+        async def notification_handler(characterstic, data: bytearray):
+            data = int.from_bytes(data, byteorder='little', signed=True)
+            print("Data: ", data)
+            
+        await client.start_notify(CHAR_UUID, notification_handler)
+        # await client.stop_notify(CHAR_UUID)
 
 async def get_val(CHAR_UUID, client:BleakClient)->int:
     val = await client.read_gatt_char(CHAR_UUID)
