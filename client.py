@@ -1,16 +1,16 @@
 '''
-set name for device to connect to
-scan devices(handle errors while scanning)
-try to connect to the device
-set deviceConnected=true
-subscribe to service=IMU
-subsribe to notification of specific charaterstic
+Author: Himanshu Verma
+Functions:
+    connect->BLEClient
+    scan->bleak.backends.device.BLEDevice
+    servs_and_chars->None
+    
 '''
 import bleak
 import asyncio
 from bleak import BleakClient, BleakScanner
 
-async def scan():
+async def scan()->bleak.backends.device.BLEDevice:
     print("Scanning...")
     devices:dict = await BleakScanner.discover(return_adv=True)
     for device, adv in devices.values():
