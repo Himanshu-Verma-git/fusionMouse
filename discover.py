@@ -12,29 +12,38 @@ from bleak import BleakClient, BleakScanner
 
 async def scan():
     print("Scanning...")
-    devices:dict = await BleakScanner.discover(return_adv=True, timeout=3)
+    devices:dict = await BleakScanner.discover(return_adv=True, timeout=3, )
     for device, adv in devices.values():
         if("Nano33BLE_SingleValue" == device.name):
             print(device,end="\n")
             print(adv)
-            return device, adv
+            return device
+    return None
 
 async def connect(device: bleak.backends.device.BLEDevice):
-    async with BleakClient(device) as client:
-        print("Connecting ", device.name)
-        if(client.is_connected):print("Success")
-        else:print("Failed")
-        
-        #get service and char
-        SERVICE_UUID = "0000180c-0000-1000-8000-00805f9b34fb"
-        CHAR_UUID = "00002a56-0000-1000-8000-00805f9b34fb"
-        
-        async def notification_handler(characterstic, data: bytearray):
-            data = int.from_bytes(data, byteorder='little', signed=True)
-            print("Data: ", data)
+    print("Connecting ", device.name)
+    try:
+        async with BleakClient(address_or_ble_device= device, timeout= 2) as client:
+            if(client.is_connected):print("Connected")
+            else:
+                print("Failed")
+                return None
             
-        await client.start_notify(CHAR_UUID, notification_handler)
-        # await client.stop_notify(CHAR_UUID)
+            #get service and char
+            SERVICE_UUID = "0000180c-0000-1000-8000-00805f9b34fb"
+            CHAR_UUID = "00002a56-0000-1000-8000-00805f9b34fb"
+            
+            async def notification_handler(characterstic, data: bytearray):
+                data = int.from_bytes(data, byteorder='little', signed=True)
+                print("Data: ", data)
+                
+            await client.start_notify(CHAR_UUID, notification_handler)
+            #keeping connection alive until connected
+            while (client.is_connected):
+                await asyncio.sleep(1)
+            await client.stop_notify(CHAR_UUID)
+    except asyncio.exceptions.CancelledError as e:
+        print(e)
 
 async def get_val(CHAR_UUID, client:BleakClient)->int:
     val = await client.read_gatt_char(CHAR_UUID)
@@ -55,8 +64,8 @@ def servs_and_chars(client:BleakClient):
     
 
 async def main():
-    device, adv = await scan()
+    device = await scan()
     print(type(device))
-    await connect(device)
+    if(device):await connect(device)
     
 asyncio.run(main())
