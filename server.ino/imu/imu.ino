@@ -1,22 +1,13 @@
-/*
-  Arduino BMI270 - Simple Gyroscope
-
-  This example reads the gyroscope values from the BMI270
-  sensor and continuously prints them to the Serial Monitor
-  or Serial Plotter.
-
-  The circuit:
-  - Arduino Nano 33 BLE Sense Rev2
-
-  created 10 Jul 2019
-  by Riccardo Rizzo
-
-  This example code is in the public domain.
-*/
-
+#include <math.h>
 #include "Arduino_BMI270_BMM150.h"
 
-void setup() {
+float gyro[3];
+float acc[3];
+float mag[3];
+
+float* ang;
+
+void setup(){
   Serial.begin(9600);
   while (!Serial);
   Serial.println("Started");
@@ -25,77 +16,45 @@ void setup() {
     Serial.println("Failed to initialize IMU!");
     while (1);
   }
-  Serial.print("Gyroscope sample rate = ");
-  Serial.print(IMU.gyroscopeSampleRate());
-  Serial.println(" Hz");
-  Serial.println();
-  Serial.println("Gyroscope in degrees/second");
-  Serial.println("X\tY\tZ");
-
-  Serial.print("Accelerometer sample rate = ");
-  Serial.print(IMU.accelerationSampleRate());
-  Serial.println(" Hz");
-  Serial.println();
-  Serial.println("Acceleration in G's");
-  Serial.println("X\tY\tZ");
-
-  Serial.print("Magnetic field sample rate = ");
-  Serial.print(IMU.magneticFieldSampleRate());
-  Serial.println(" Hz");
-  Serial.println();
-  Serial.println("Magnetic Field in uT");
-  Serial.println("X\tY\tZ");
 }
 
-void loop() {
-  float gx, gy, gz;
-  float ax, ay, az;
-  float mx, my, mz;
 
-  if (IMU.gyroscopeAvailable()) {
-    IMU.readGyroscope(gx, gy, gz);
-
-    Serial.print(gx);
-    Serial.print('\t');
-    Serial.print(gy);
-    Serial.print('\t');
-    Serial.println(gz);
-  }
-  if (IMU.accelerationAvailable()) {
-    IMU.readAcceleration(ax, ay, az);
-
-    Serial.print(ax);
-    Serial.print('\t');
-    Serial.print(ay);
-    Serial.print('\t');
-    Serial.println(az);
+void loop(){
+  if (IMU.gyroscopeAvailable() 
+  && IMU.accelerationAvailable() 
+  && IMU.magneticFieldAvailable()) {
+    IMU.readGyroscope(gyro[0], gyro[1], gyro[2]);
+    IMU.readAcceleration(acc[0], acc[1], acc[2]);
+    IMU.readMagneticField(mag[0], mag[1], mag[2]);
   }
 
-  if (IMU.magneticFieldAvailable()) {
-    IMU.readMagneticField(mx, my, mz);
-
-    Serial.print(mx);
-    Serial.print('\t');
-    Serial.print(my);
-    Serial.print('\t');
-    Serial.println(mz);
+  ang = angles(gyro, acc, mag);
+  // for(int i=0; i<3; i++){
+  for(int i=0; i<3; i++){
+    Serial.print( (*(ang+i)) );
+    Serial.print("\t");
   }
-
-    // Calculate pitch, roll, and yaw
-  float pitch = atan2(ay, az) * 180.0 / PI;
-  float roll = atan2(ax, sqrt(ay * ay + az * az)) * 180.0 / PI;
-
-  // Yaw calculation using magnetometer data (assumes no calibration for simplicity)
-  float yaw = atan2(my, mx) * 180.0 / PI;
-
-  // Output pitch, roll, yaw
-  Serial.print("Pitch: ");
-  Serial.print(pitch);
-  Serial.print(" Roll: ");
-  Serial.print(roll);
-  Serial.print(" Yaw: ");
-  Serial.println(yaw);
-
   Serial.println();
   delay(250);
+}
+
+// Function prototype: angles(gyro: arr[3], acc: arr[3], mag: arr[3])
+float* angles(float gyro[3], float acc[3], float mag[3]) {
+    float* result = new float[3];  // Array to hold the output: [pitch, roll, yaw]
+    
+    // Accelerometer calculations for pitch and roll
+    float pitch = atan2(acc[1], sqrt(acc[0] * acc[0] + acc[2] * acc[2])) * 180.0 / PI;
+    float roll = atan2(-acc[0], acc[2]) * 180.0 / PI;
+    
+    // Magnetometer calculation for yaw (corrected for pitch and roll)
+    float magX = mag[0] * cos(pitch) + mag[1] * sin(roll) * sin(pitch) + mag[2] * cos(roll) * sin(pitch);
+    float magY = mag[1] * cos(roll) - mag[2] * sin(roll);
+    float yaw = atan2(magY, magX) * 180.0 / PI;
+    
+    // Store the results in the output array
+    result[0] = pitch;
+    result[1] = roll;
+    result[2] = yaw;
+    
+    return result;
 }
