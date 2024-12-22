@@ -21,8 +21,8 @@ async def scan()->bleak.backends.device.BLEDevice:
     return None
 
 async def notification_handler(characterstic, data: bytearray):
-    data = int.from_bytes(data, byteorder='little', signed=True)
-    print("Data: ", data)
+    # data = int.from_bytes(data, byteorder='little', signed=True)
+    print("Data: ", data.decode("utf-8"))
 async def connect(device: bleak.backends.device.BLEDevice):
     print("Connecting ", device.name)
     try:

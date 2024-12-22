@@ -29,11 +29,14 @@ void loop(){
   }
 
   ang = angles(gyro, acc, mag);
+  String val = floatToStringConcat( *(ang+0), *(ang+1), *(ang+2) );
+  Serial.println(val);
+  
+  // print values
   // for(int i=0; i<3; i++){
-  for(int i=0; i<3; i++){
-    Serial.print( (*(ang+i)) );
-    Serial.print("\t");
-  }
+  //   Serial.print( (*(ang+i)) );
+  //   Serial.print("\t");
+  // }
   Serial.println();
   delay(250);
 }
@@ -57,4 +60,8 @@ float* angles(float gyro[3], float acc[3], float mag[3]) {
     result[2] = yaw;
     
     return result;
+}
+
+String floatToStringConcat(float num1, float num2, float num3) {
+  return String(num1, 2) + "_" + String(num2, 2) + "_" + String(num3, 2);
 }
